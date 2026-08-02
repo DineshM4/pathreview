@@ -23,3 +23,34 @@
 **PLAN.md link:** https://github.com/DineshM4/pathreview/blob/fix/153-rag-chunk-error/PLAN.md
 
 **Blockers or open questions:** None
+
+## Week 9 — Solution building & PR submission
+
+### Check-in 1 (mid-week)
+
+**Current progress:**
+Implemented the core fix from PLAN.md. Changed the context concatenation in `rag/evaluator/faithfulness_checker.py` from `chunk.get("text", "")` to `chunk.get("text") or ""`. The `or ""` guardrail coerces an explicitly-null `text` value (`{"text": None}`) to an empty string before `" ".join(...)`, which is the exact case the missing-key default never handled. The previously-failing `test_none_context_chunk_text` now passes.
+
+**Next steps:**
+Add one more regression test covering a `None` chunk mixed with valid chunks (to confirm valid text is still used and not just that it avoids crashing), run the full self-review, and open the PR.
+
+**Blockers:**
+None.
+
+---
+
+### Check-in 2 (end of week)
+
+**PR link:** [to be added once submitted to ascherj/pathreview]
+
+**Branch:** `fix/153-rag-chunk-error`
+
+**What you built:**
+A one-line guardrail fix in `FaithfulnessChecker.check()` that stops the faithfulness checker from crashing when a retrieved context chunk has `text: None`. Replacing `chunk.get("text", "")` with `chunk.get("text") or ""` coerces a null text value to an empty string so `" ".join(...)` no longer raises `TypeError: sequence item 0: expected str instance, NoneType found`.
+
+**Tests added or updated:**
+`tests/unit/test_faithfulness_checker.py` — the existing `test_none_context_chunk_text` (which reproduced the bug) now passes. `test_none_chunk_mixed_with_valid_chunks` now covers a `None` chunk mixed with valid chunks to pass.
+
+**Self-review confirmation:** [x] make check passes (ruff + black clean on the changed file)  [x] make test-unit passes for the target test — note: the repo has ~52 pre-existing unit-test failures in unrelated modules (skill_extractor, tech_detector, structural_chunker) plus 3 pre-existing failures in the scoring-math tests of this file; all were verified to fail on the original code before my change and are outside the scope of issue #153.
+
+**Draft PR feedback received from:** none
