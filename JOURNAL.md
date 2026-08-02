@@ -41,7 +41,7 @@ None.
 
 ### Check-in 2 (end of week)
 
-**PR link:** [to be added once submitted to ascherj/pathreview]
+**PR link:** https://github.com/ascherj/pathreview/pull/600
 
 **Branch:** `fix/153-rag-chunk-error`
 
