@@ -54,3 +54,37 @@ A one-line guardrail fix in `FaithfulnessChecker.check()` that stops the faithfu
 **Self-review confirmation:** [x] make check passes (ruff + black clean on the changed file)  [x] make test-unit passes for the target test — note: the repo has ~52 pre-existing unit-test failures in unrelated modules (skill_extractor, tech_detector, structural_chunker) plus 3 pre-existing failures in the scoring-math tests of this file; all were verified to fail on the original code before my change and are outside the scope of issue #153.
 
 **Draft PR feedback received from:** none
+
+---
+
+## Week 10 — Iteration & reflection
+
+### Reviewer feedback
+
+**Feedback received:** [ ] Yes  [x] No — still awaiting review
+
+**Summary of feedback:**
+[What did reviewers comment on? Or note that no review came in.]
+
+**How you responded:**
+[What changes did you make, or what did you reply? If no feedback,
+leave blank.]
+
+---
+
+### Reflection
+
+**What was harder than you expected?**
+The one-line fix in `rag/evaluator/faithfulness_checker.py:34` was trivial; establishing that it was correct was not. I had to internalize that `dict.get("text", "")` only falls back to `""` on a *missing key*, never on a present-but-null value, so the crash was `" ".join()` receiving `None` rather than anything wrong with the default. Then `make test-unit` surfaced ~52 unrelated failures (skill_extractor, tech_detector, structural_chunker) plus 3 scoring-math failures in my own test file, and I had to re-run them on unmodified `main` to prove they were pre-existing and not mine.
+
+**What did you learn about working in a large codebase?**
+In my own projects I'd have normalized every chunk at the boundary or added a schema validator; here the correct move was the smallest diff that closes the issue without changing behavior any other caller depends on. `chunk.get("text") or ""` also silently absorbs `0` and `[]`, which I accepted only because the field is a text string by contract. That kind of "is this coercion safe for this specific field" reasoning only comes from reading the surrounding code, not from the issue text.
+
+**How did AI tools help — and where did they fall short?**
+AI was most useful for orientation — locating the `join()` call site, drafting the minimal repro `FaithfulnessChecker().check("Knows Python.", [{"text": None}])`, and scaffolding `test_none_chunk_mixed_with_valid_chunks`. Where it fell short was scope judgment: it would happily have "fixed" the unrelated failing modules or widened the change into input validation across the evaluator. Deciding that issue #153 ends at the `None`-to-`""` coercion, and that the other 55 failures were explicitly out of scope, was a call I had to make and defend in the PR.
+
+**What would you do differently if you started over?**
+I'd capture a baseline `make test-unit` run on untouched `main` before writing a single line, so pre-existing failures were recorded up front instead of reconstructed afterward. I'd also write the mixed-chunk regression test in the same commit as the repro test, since "doesn't crash" and "still concatenates the valid text" are two different guarantees and I initially only proved the first. Finally I'd open the draft PR earlier to get review in flight rather than finishing everything before asking.
+
+**What are you most proud of from this module?**
+The reproduction, not the patch. I pinned the exact failure mechanism — `TypeError: sequence item 0: expected str instance, NoneType found` traced to a null `text` slipping past the `get()` default into `" ".join(...)` — and committed that as a failing test before changing any production code. Because of that, the fix was a one-line consequence of a diagnosis rather than a guess that happened to make a test go green.
