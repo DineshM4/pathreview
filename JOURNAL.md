@@ -70,8 +70,6 @@ A one-line guardrail fix in `FaithfulnessChecker.check()` that stops the faithfu
 [What changes did you make, or what did you reply? If no feedback,
 leave blank.]
 
----
-
 ### Reflection
 
 **What was harder than you expected?**
